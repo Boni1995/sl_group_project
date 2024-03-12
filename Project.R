@@ -1,5 +1,7 @@
 # Library
 library(dplyr)
+library(tidyr)
+library(openxlsx)
 
 # Load datasets
 
@@ -20,8 +22,8 @@ countries_index$home <- ifelse(countries_index$Country %in% ds_matches$home_team
 countries_index$away <- ifelse(countries_index$Country %in% ds_matches$away_team, 1, 0)
 countries_index$migration <- ifelse(countries_index$Country %in% ds_migration$Country, 1, 0)
 
-ruta_archivo <- "C:\\Users\\franc\\Documents\\GitHub\\sl_group_project\\Datasets\\check_country_index.xlsx"
-write.xlsx(countries_index, file = ruta_archivo)
+# ruta_archivo <- "C:\\Users\\franc\\Documents\\GitHub\\sl_group_project\\Datasets\\check_country_index.xlsx"
+# write.xlsx(countries_index, file = ruta_archivo)
 
 country_corrections <- c("Czechia"="Czech Republic", "Czechoslovakia"="Czech Republic",
                          "Western Australia"="Australia","German DR"="Germany", "Northern Ireland"="Ireland",
@@ -54,9 +56,36 @@ ds_immigration <- immigration[,c(2-3)]
 
 ds_nationality <- nationality[,c(2-3)]
 
+# So final tables to use are: ds_matches, ds_immigration, ds_nationality
 
-# Immigration dataset analysis
+# We calculate avg immigration and nationality
+immigration_avg <- aggregate(Value ~ Country, data = ds_immigration, FUN = mean)
+colnames(immigration_avg) <- c("country", "annual_avg")
 
-simple_avg <- aggregate(nationality_acquisition ~ country, data = ds_immigration, FUN = mean)
+nationality_avg <- aggregate(Value ~ Country, data = ds_nationality, FUN = mean)
+colnames(nationality_avg) <- c("country", "annual_avg")
 
-simple_avg$won <- sum
+# Now we will create a final table with all the variables in it, by country
+# Matches results
+ds_final_project <- ds_matches %>%
+  pivot_longer(cols = c(home_team, away_team), names_to = "type", values_to = "country") %>%
+  mutate(result = case_when(
+    outcome == "w" & type == "home_team" | outcome == "l" & type == "away_team" ~ "w",
+    outcome == "w" & type == "away_team" | outcome == "l" & type == "home_team" ~ "l",
+    outcome == "t" ~ "t"
+  )) %>%
+  select(country, result)
+
+# Add the immigration average
+ds_final_project <- merge(ds_final_project, immigration_avg, by = "country", all.x = TRUE)
+colnames(ds_final_project) <- c("country", "result", "immigration_avg")
+
+ds_final_project <- merge(ds_final_project, nationality_avg, by = "country", all.x = TRUE)
+colnames(ds_final_project) <- c("country", "result", "immigration_avg", "nationality_avg")
+
+# Substract rows without data related to immigration
+summary(ds_final_project)
+
+ds_cleaned <- ds_final_project[!is.na(ds_final_project$nationality_avg),]
+
+summary(ds_cleaned)
