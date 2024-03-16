@@ -89,3 +89,17 @@ summary(ds_final_project)
 ds_cleaned <- ds_final_project[!is.na(ds_final_project$nationality_avg),]
 
 summary(ds_cleaned)
+
+# World cup matches manipulation
+wc_matches_2 <- wc_matches[,c(1:3,6)]
+wc_matches_2$outcome <- ifelse(wc_matches_2$home_score > wc_matches_2$away_score, "w",
+                               ifelse(wc_matches_2$home_score < wc_matches_2$away_score, "l", "t"))
+
+wc_matches_3 <- wc_matches_2 %>%
+  pivot_longer(cols = c(home_team, away_team), names_to = "type", values_to = "country") %>%
+  mutate(result = case_when(
+    outcome == "w" & type == "home_team" | outcome == "l" & type == "away_team" ~ "w",
+    outcome == "w" & type == "away_team" | outcome == "l" & type == "home_team" ~ "l",
+    outcome == "t" ~ "t"
+  )) %>%
+  select(country, result)
