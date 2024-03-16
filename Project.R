@@ -70,9 +70,9 @@ colnames(nationality_avg) <- c("country", "annual_avg")
 ds_final_project <- ds_matches %>%
   pivot_longer(cols = c(home_team, away_team), names_to = "type", values_to = "country") %>%
   mutate(result = case_when(
-    outcome == "w" & type == "home_team" | outcome == "l" & type == "away_team" ~ "w",
-    outcome == "w" & type == "away_team" | outcome == "l" & type == "home_team" ~ "l",
-    outcome == "t" ~ "t"
+    outcome == "w" & type == "home_team" | outcome == "l" & type == "away_team" ~ 1,
+    outcome == "w" & type == "away_team" | outcome == "l" & type == "home_team" ~ -1,
+    outcome == "t" ~ 0
   )) %>%
   select(country, result)
 
