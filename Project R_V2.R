@@ -3,6 +3,12 @@ library(dplyr)
 library(tidyr)
 library(openxlsx)
 
+# Country corrections
+country_corrections <- c("Czechia"="Czech Republic",
+                         "Western Australia"="Australia","German DR"="Germany", "Northern Ireland"="Ireland",
+                         "Republic of Ireland"="Ireland", "South Korea"="Korea", "Slovak Republic"="Slovakia",
+                         "Central Spain"="Spain", "Turkey"="Türkiye", "United Kingdom"="England")
+
 # Load datasets
 
 matches <- read.csv("C:\\Users\\franc\\Documents\\GitHub\\sl_group_project\\Datasets\\results.csv")
@@ -25,6 +31,10 @@ ds_matches2 <- ds_matches %>%
   )) %>%
   select(country, result)
 
+ds_matches2$country <- ifelse(ds_matches2$country %in% names(country_corrections),
+                             country_corrections[ds_matches2$country], ds_matches2$country)
+
+
 # Final table with summation of matches
 result_by_country <- ds_matches2 %>%
   group_by(country, result) %>%
@@ -45,6 +55,9 @@ ds_migration_filter <- ds_migration[,c(4,8,11)]
 nationality <- subset(ds_migration_filter, Variable == "Acquisition of nationality by country of former nationality")
 colnames(nationality) <- c("type", "country", "people")
 
+nationality$country <- ifelse(nationality$country %in% names(country_corrections),
+                             country_corrections[nationality$country], nationality$country)
+
 nationality_avg <- aggregate(people ~ country, data = nationality, FUN = mean)
 colnames(nationality_avg) <- c("country", "annual_avg")
 
@@ -61,6 +74,23 @@ summary(df_cleaned)
 # shapiro.test(log_results)
 # ks.test(results_by_country$result, "pnorm", mean(results_by_country$result), sd(results_by_country$result))
 
+# Standarize values`
+results_for_stand <- result_by_country[,c(1:4)]
+data_for_standarize <- merge(results_for_stand, nationality_avg, by = "country", all.x = TRUE)
+colnames(data_for_standarize) <- c("country", "wins_n", "loss_n", "ties_n", "nationality_avg")
+
+final_data_for_stand <- data_for_standarize[!is.na(data_for_standarize$nationality_avg),]
+
+data_to_standariz <- final_data_for_stand[,c("wins_n", "loss_n", "ties_n", "nationality_avg")]
+scaled_data <- scale(data_to_standariz)
+
+min_value <- min(df_cleaned$nationality_avg)
+max_value <- max(df_cleaned$nationality_avg)
+df_cleaned_stand <- df_cleaned
+df_cleaned_stand$nationality_avg <- (df_cleaned_stand$nationality_avg - min_value)/(max_value - min_value)
+
+data_to_standariz2 <- df_cleaned_stand[,c("wins_n", "loss_n", "ties_n", "nationality_avg")]
+
 # Defining number of clusters
 wssplot <- function(data, nc=15, seed=1234){
   wss <- (nrow(data)-1)*sum(apply(data,2,var))
@@ -72,12 +102,17 @@ wssplot <- function(data, nc=15, seed=1234){
 
 df_elbow <- df_cleaned[,c(2:5)]
 
-wssplot(df_elbow, nc=15) 
+wssplot(df_elbow, nc=15)
+wssplot(scaled_data, nc=15)
+wssplot(data_to_standariz2, nc=15)
 
 # Distances
 distances <- dist(df_cleaned[,c("wins_n", "loss_n", "ties_n", "nationality_avg")], method = "euclidean")
+stand_distances <- dist(scaled_data, method = "euclidean")
+stan2_distances <- dist(data_to_standariz2, method = "euclidean")
 
-# Dendogram
+
+# Original Dendogram
 H.fit <- hclust(distances, method="ward.D2")
 
 plot(H.fit, labels = df_cleaned$country, main = "Cluster by matches' outcomes and nationality acquisition",
@@ -88,3 +123,29 @@ plot(H.fit, labels = df_cleaned$country, main = "Cluster by matches' outcomes an
 # draw dendogram with red borders around the 5 clusters
 rect.hclust(H.fit, k=3, border="red") 
 
+
+# Scaled Dendogram (4 columns standarized together)
+H.fit <- hclust(stand_distances, method="ward.D2")
+
+plot(H.fit, labels = final_data_for_stand$country, main = "Cluster by matches' outcomes and nationality acquisition",
+     cex.main=1) # display dendogram
+
+#groups <- cutree(H.fit, k=3) # cut tree into 5 clusters
+
+# draw dendogram with red borders around the 5 clusters
+rect.hclust(H.fit, k=4, border="red") 
+
+
+# Scaled Dendogram (nationality column)
+H.fit <- hclust(stan2_distances, method="ward.D2")
+
+plot(H.fit, labels = df_cleaned_stand$country, main = "Cluster by matches' outcomes and nationality acquisition",
+     cex.main=1) # display dendogram
+
+#groups <- cutree(H.fit, k=3) # cut tree into 5 clusters
+
+# draw dendogram with red borders around the 5 clusters
+rect.hclust(H.fit, k=3, border="red")
+
+
+# Check levels of nationality acquisition (maybe a histogram)
