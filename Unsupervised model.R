@@ -73,6 +73,11 @@ df_wcups2 <- aggregate(outcome ~ country, data = df_wcups, FUN = sum)
 # Join both dataframes
 df_country <- merge(df_wcups2, df_foreigners, by = "country", all.x = TRUE)
 
+# Analyze dataset
+hist(df_country$outcome, freq = FALSE, main = "Histograma de Datos", xlab = "Valores", ylab = "Densidad")
+hist(df_country$foreign, freq = FALSE, main = "Histograma de Datos", xlab = "Valores", ylab = "Densidad")
+
+
 # Check normality
 # shapiro.test(df_by_country$foreigners)
 # shapiro.test(df_by_country$score)
@@ -80,7 +85,8 @@ df_country <- merge(df_wcups2, df_foreigners, by = "country", all.x = TRUE)
 # shapiro.test(log_results)
 # ks.test(results_by_country$result, "pnorm", mean(results_by_country$result), sd(results_by_country$result))
 
-# 
+# Analyzing to reduce data for dendogram
+summary(df_country)
 
 # Defining number of clusters
 wssplot <- function(data, nc=15, seed=1234){
@@ -101,10 +107,8 @@ distances <- dist(df_country[,c("outcome", "foreign")], method = "euclidean")
 # Dendogram
 H.fit <- hclust(distances, method="ward.D2")
 
-plot(H.fit, labels = df_country$country, main = "Cluster by score and foreigners",
-     cex.main=1) # display dendogram
+plot(H.fit, labels = df_country$country, main = "Cluster by score and foreigners", cex = 0.8) # display dendogram
 
-#groups <- cutree(H.fit, k=3) # cut tree into 5 clusters
-
-# draw dendogram with red borders around the 5 clusters
+# draw dendogram with red borders around the clusters
 rect.hclust(H.fit, k=4, border="red") 
+
