@@ -74,8 +74,52 @@ df_wcups2 <- aggregate(outcome ~ country, data = df_wcups, FUN = sum)
 df_country <- merge(df_wcups2, df_foreigners, by = "country", all.x = TRUE)
 
 # Analyze dataset
-hist(df_country$outcome, freq = FALSE, main = "Histograma de Datos", xlab = "Valores", ylab = "Densidad")
-hist(df_country$foreign, freq = FALSE, main = "Histograma de Datos", xlab = "Valores", ylab = "Densidad")
+library(ggplot2)
+
+# Distribution of outcomes
+hist(df_country$outcome,
+     main = "Outcome Distribution",
+     xlab = "Outcome",
+     ylab = "Frequency",
+     col = "skyblue",
+     border = "black")
+
+# Top and bottom
+top_bottom <- df_country[df_country$country %in% c("Canada", "China", "Germany", "Brazil", "Italy", "Argentina", "France"), ]
+top_bottom <- top_bottom[order(top_bottom$outcome, decreasing = TRUE), ]
+
+barplot(top_bottom$outcome,
+        names.arg = top_bottom$country,
+        main = "Top/Bottom countries",
+        ylab = "Outcome",
+        col = "skyblue",
+        border = "black",
+        ylim = c(0, max(top_bottom$outcome) * 1.2),
+        las = 2)
+
+# Distribution of foreigners
+hist(df_country$foreign,
+     main = "Number of foreigners playing World Cups",
+     xlab = "n° of foreigners",
+     ylab = "Frequency",
+     col = "skyblue",
+     border = "black")
+
+# Top and bottom
+top_bottom_foreigners <- df_country[df_country$country %in% c("Canada", "China", "United States", "Germany", "Brazil", "Italy", "Argentina", "France"), ]
+top_bottom_foreigners <- top_bottom_foreigners[order(top_bottom_foreigners$foreign, decreasing = TRUE), ]
+usa <- c("United States" = "USA")
+top_bottom_foreigners$country <- ifelse(top_bottom_foreigners$country %in% names(usa),
+       usa[top_bottom_foreigners$country], top_bottom_foreigners$country)
+
+barplot(top_bottom_foreigners$foreign,
+        names.arg = top_bottom_foreigners$country,
+        main = "Number of foreigners playing World Cups",
+        ylab = "Foreigners",
+        col = "skyblue",
+        border = "black",
+        ylim = c(0, max(top_bottom_foreigners$foreign) * 1.2),
+        las = 2)
 
 
 # Check normality
