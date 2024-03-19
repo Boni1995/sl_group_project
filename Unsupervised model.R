@@ -84,18 +84,19 @@ hist(df_country$outcome,
      col = "skyblue",
      border = "black")
 
-# Top and bottom
-top_bottom <- df_country[df_country$country %in% c("Canada", "China", "Germany", "Brazil", "Italy", "Argentina", "France"), ]
-top_bottom <- top_bottom[order(top_bottom$outcome, decreasing = TRUE), ]
+# Top 8
+top_outcome <- df_country[df_country$outcome > 90, ]
+top_outcome <- top_outcome[order(top_outcome$outcome, decreasing = TRUE), ]
 
-barplot(top_bottom$outcome,
-        names.arg = top_bottom$country,
-        main = "Top/Bottom countries",
+barplot(top_outcome$outcome,
+        names.arg = top_outcome$country,
+        main = "Top countries in World Cups",
         ylab = "Outcome",
         col = "skyblue",
         border = "black",
-        ylim = c(0, max(top_bottom$outcome) * 1.2),
-        las = 2)
+        ylim = c(0, max(top_outcome$outcome) * 1.2),
+        las = 2,
+        cex.names = 0.8)
 
 # Distribution of foreigners
 hist(df_country$foreign,
@@ -106,19 +107,21 @@ hist(df_country$foreign,
      border = "black")
 
 # Top and bottom
-top_bottom_foreigners <- df_country[df_country$country %in% c("Canada", "China", "United States", "Germany", "Brazil", "Italy", "Argentina", "France"), ]
-top_bottom_foreigners <- top_bottom_foreigners[order(top_bottom_foreigners$foreign, decreasing = TRUE), ]
-usa <- c("United States" = "USA")
-top_bottom_foreigners$country <- ifelse(top_bottom_foreigners$country %in% names(usa),
-       usa[top_bottom_foreigners$country], top_bottom_foreigners$country)
+top_foreigners <- df_country[df_country$foreign > 45, ]
+top_foreigners <- top_foreigners[order(top_foreigners$foreign, decreasing = TRUE), ]
 
-barplot(top_bottom_foreigners$foreign,
-        names.arg = top_bottom_foreigners$country,
+usa <- c("United States" = "USA")
+
+top_foreigners$country <- ifelse(top_foreigners$country %in% names(usa),
+       usa[top_foreigners$country], top_foreigners$country)
+
+barplot(top_foreigners$foreign,
+        names.arg = top_foreigners$country,
         main = "Number of foreigners playing World Cups",
         ylab = "Foreigners",
         col = "skyblue",
         border = "black",
-        ylim = c(0, max(top_bottom_foreigners$foreign) * 1.2),
+        ylim = c(0, max(top_foreigners$foreign) * 1.2),
         las = 2)
 
 
