@@ -41,6 +41,44 @@ class(fifa_rnk$year)
 # Final dataset
 fifa_rnk <- fifa_rnk[,c("rank", "country", "total_points", "year")]
 
+max(fifa_rnk$year)
+min(fifa_rnk$year)
+
+wc_years <- c(2022, 2022, 2022, 2022,
+              2018, 2018, 2018, 2018,
+              2014, 2014, 2014, 2014,
+              2010, 2010, 2010, 2010,
+              2006, 2006, 2006, 2006,
+              2002, 2002, 2002, 2002,
+              1998, 1998, 1998, 1998,
+              1994, 1994, 1994, 1994)
+
+full_years <- c(2022, 2021, 2020, 2019,
+                2018, 2017, 2016, 2015,
+                2014, 2013, 2012, 2011,
+                2010, 2009, 2008, 2007,
+                2006, 2005, 2004, 2003,
+                2002, 2001, 2000, 1999,
+                1998, 1997, 1996, 1995,
+                1994, 1993, 1992, 1991)
+
+year_map <- data.frame(year = full_years, reference_year = wc_years)
+
+wc_fifa_rnk <- merge(fifa_rnk, year_map, by.x = "year", by.y = "year", all.x = TRUE)
+
+summary(wc_fifa_rnk)
+
+wc_fifa_rnk <- subset(wc_fifa_rnk, !(is.na(wc_fifa_rnk$reference_year)))
+
+final_wc_rnk <- aggregate(. ~ reference_year + country, data = wc_fifa_rnk, FUN = mean)
+
+final_wc_rnk <- final_wc_rnk[, c("reference_year", "country", "rank", "total_points")]
+colnames(final_wc_rnk) <- c("year", "country", "rank", "total_points")
+
+final_wc_rnk$rank <- round(final_wc_rnk$rank)
+final_wc_rnk$total_points <- round(final_wc_rnk$total_points)
+
+
 # Download the final dataset
 path <- "C:\\Users\\franc\\Documents\\GitHub\\sl_group_project\\Datasets\\ranking_fifa_final.csv"
-write.csv(fifa_rnk, file = path)
+write.csv(final_wc_rnk, file = path)
