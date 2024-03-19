@@ -37,3 +37,8 @@ names(matches_home_foreign)[names(matches_home_foreign) == "foreign"] <- "home_f
 matches_foreign <- merge(matches_home_foreign, foreign, by.x = c("away_team", "Year"), by.y = c("country", "year"))
 
 names(matches_foreign)[names(matches_foreign) == "foreign"] <- "awaye_foreign"
+
+
+# Download the final dataset
+path <- "C:\\Users\\franc\\Documents\\GitHub\\sl_group_project\\Datasets\\matches_foreign_2.csv"
+write.csv(matches_foreign, file = path)
