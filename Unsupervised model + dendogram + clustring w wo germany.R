@@ -226,8 +226,8 @@ ggplot(df_country_filtered, aes(x=foreign, y=outcome, label=country)) +
 
 # PCA
 
-library(dplyr)
-pca_data <- read.csv("C:\\Users\\Hossein\\Downloads\\sl_group_project-main (8)\\sl_group_project-main\\Datasets\\matches_foreign_final.csv")
+
+pca_data <- read.csv("C:\\Users\\Hesam\\Downloads\\sl_group_project-main (8)\\sl_group_project-main\\Datasets\\matches_foreign_final.csv")
 
 # Select columns after the 4th column
 pca_data <- pca_data[, 5:ncol(pca_data)]
