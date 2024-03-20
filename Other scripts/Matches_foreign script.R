@@ -36,8 +36,24 @@ names(matches_home_foreign)[names(matches_home_foreign) == "foreign"] <- "home_f
 
 matches_foreign <- merge(matches_home_foreign, foreign, by.x = c("away_team", "Year"), by.y = c("country", "year"))
 
-names(matches_foreign)[names(matches_foreign) == "foreign"] <- "awaye_foreign"
+names(matches_foreign)[names(matches_foreign) == "foreign"] <- "away_foreign"
 
+# Add FIFA ranking
+fifa_rnk = read.csv("C:\\Users\\franc\\Documents\\GitHub\\sl_group_project\\Datasets\\ranking_fifa_final.csv")
+
+matches_foreign <- merge(matches_foreign, fifa_rnk, by.x = c("away_team", "Year"), by.y = c("country", "year"))
+names(matches_foreign)[names(matches_foreign) == "rank"] <- "away_rank"
+names(matches_foreign)[names(matches_foreign) == "total_points"] <- "away_points"
+
+matches_foreign <- merge(matches_foreign, fifa_rnk, by.x = c("home_team", "Year"), by.y = c("country", "year"))
+
+names(matches_foreign)[names(matches_foreign) == "rank"] <- "home_rank"
+names(matches_foreign)[names(matches_foreign) == "total_points"] <- "home_points"
+
+# Order and clean columns
+matches_foreign <- matches_foreign[, c("Year", "home_team", "away_team", "home_score", "away_score", "outcome",
+                                      "home_foreign", "home_rank", "home_points", "away_foreign", "away_rank",
+                                      "away_points")]
 
 # Download the final dataset
 path <- "C:\\Users\\franc\\Documents\\GitHub\\sl_group_project\\Datasets\\matches_foreign_2.csv"
