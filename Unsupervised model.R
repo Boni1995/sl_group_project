@@ -2,8 +2,11 @@
 library(dplyr)
 library(tidyr)
 library(openxlsx)
+library(ggplot2)
 
 foreign_born = read.xlsx("C:\\Users\\franc\\Documents\\GitHub\\sl_group_project\\Datasets\\Dataset Two Approaches Migrants World Cup 1930-2018 HARVARD.xlsx")
+summary(foreign_born)
+class(foreign_born$foreign)
 
 # Number of rows same as foreign_born
 foreign_born$foreign <- numeric(nrow(foreign_born))  
@@ -159,3 +162,94 @@ plot(H.fit, labels = df_country$country, main = "Cluster by score and foreigners
 # draw dendogram with red borders around the clusters
 rect.hclust(H.fit, k=4, border="red") 
 
+
+# Calculate the Pearson correlation coefficient for the entire dataframe
+correlation_coef <- cor(df_country$outcome, df_country$foreign, use="complete.obs")
+
+# Print the correlation coefficient
+print(correlation_coef)
+
+# Visualize the relationship with a scatter plot for the entire dataframe
+plot(df_country$foreign, df_country$outcome,
+     main="Outcome vs. Number of Foreigners",
+     xlab="Number of Foreigners", ylab="Outcome (Score)",
+     pch=19, col="blue")
+
+# Standardize the data for clustering
+df_for_clustering_scaled <- scale(df_country[, c("outcome", "foreign")])
+
+# Elbow method to determine the optimal number of clusters
+wss <- numeric(15)
+for (i in 1:15) {
+  set.seed(123) # Ensure reproducibility
+  km_out <- kmeans(df_for_clustering_scaled, centers=i, nstart=25)
+  wss[i] <- km_out$tot.withinss
+}
+
+plot(1:15, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
+
+
+# K-MEAN MODEL
+# Perform k-means clustering with the chosen number of clusters, e.g., k=3
+set.seed(123)
+k <- 3 # Replace with your chosen k based on the elbow plot
+km_result <- kmeans(df_for_clustering_scaled, centers=k, nstart=25)
+
+# Add cluster assignments to your dataframe
+df_country$cluster <- as.factor(km_result$cluster)
+
+# View the distribution of countries across the clusters
+table(df_country$cluster)
+aggregate(cbind(outcome, foreign) ~ cluster, data=df_country, FUN=mean)
+# Assuming df_country now includes a 'cluster' column from the k-means result
+
+# Plotting the clusters with country labels
+ggplot(df_country, aes(x=foreign, y=outcome, label=country)) +
+  geom_point(alpha=0.7, size=3) +  # Plot the points
+  geom_text(aes(color=as.factor(cluster)), check_overlap = TRUE, vjust = -0.5) +  # Add text labels
+  scale_color_manual(values=rainbow(length(unique(df_country$cluster)))) +
+  labs(title="K-means Clustering of Countries by Outcome and Number of Foreigners",
+       x="Number of Foreigners", y="Outcome (Score)",
+       color="Cluster") +
+  theme_minimal() +
+  theme(legend.position="right")
+
+
+# K-MEAN but without Germany (outlier)
+# Filter out Germany from the dataframe
+df_country_filtered <- df_country %>% filter(country != "Germany")
+
+# Standardize the data for clustering without Germany
+df_for_clustering_scaled_filtered <- scale(df_country_filtered[, c("outcome", "foreign")])
+
+# Determine the optimal number of clusters again (optional, you can use the same k you found previously)
+wss_filtered <- numeric(15)
+for (i in 1:15) {
+  set.seed(123) # Ensure reproducibility
+  km_out_filtered <- kmeans(df_for_clustering_scaled_filtered, centers=i, nstart=25)
+  wss_filtered[i] <- km_out_filtered$tot.withinss
+}
+
+plot(1:15, wss_filtered, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
+
+# Assuming the same k value is chosen
+set.seed(123)
+k <- 3 # or the new k value based on the elbow plot without Germany
+km_result_filtered <- kmeans(df_for_clustering_scaled_filtered, centers=k, nstart=25)
+
+# Add cluster assignments to the filtered dataframe
+df_country_filtered$cluster <- as.factor(km_result_filtered$cluster)
+
+# View the distribution of countries across the clusters without Germany
+table(df_country_filtered$cluster)
+
+# Plotting the clusters without Germany
+ggplot(df_country_filtered, aes(x=foreign, y=outcome, label=country)) +
+  geom_point(aes(color=as.factor(cluster)), alpha=0.7, size=3) +
+  geom_text(check_overlap = TRUE, vjust = -0.5) +
+  scale_color_manual(values=rainbow(length(unique(df_country_filtered$cluster)))) +
+  labs(title="K-means Clustering of Countries by Outcome and Number of Foreigners (without Germany)",
+       x="Number of Foreigners", y="Outcome (Score)",
+       color="Cluster") +
+  theme_minimal() +
+  theme(legend.position="right")
