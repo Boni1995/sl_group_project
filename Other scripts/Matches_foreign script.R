@@ -54,6 +54,7 @@ names(matches_foreign)[names(matches_foreign) == "total_points"] <- "home_points
 matches_foreign <- matches_foreign[, c("Year", "home_team", "away_team", "home_score", "away_score", "outcome",
                                       "home_foreign", "home_rank", "home_points", "away_foreign", "away_rank",
                                       "away_points")]
+str(matches_foreign)
 
 # Download the final dataset
 path <- "C:\\Users\\franc\\Documents\\GitHub\\sl_group_project\\Datasets\\matches_foreign_2.csv"
