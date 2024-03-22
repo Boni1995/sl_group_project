@@ -76,10 +76,15 @@ df_wcups2 <- aggregate(outcome ~ country, data = df_wcups, FUN = sum)
 # Join both dataframes
 df_country <- merge(df_wcups2, df_foreigners, by = "country", all.x = TRUE)
 
-# Analyze dataset
-library(ggplot2)
 
 # Distribution of outcomes
+boxplot(df_country$outcome, df_country$foreign,
+        main = "Outcome and Foreign Distribution",
+        ylab = "Value",
+        names = c("Outcome", "Foreign"),
+        col = c("skyblue", "violet"),
+        border = "black") 
+
 hist(df_country$outcome,
      main = "Outcome Distribution",
      xlab = "Outcome",
@@ -163,6 +168,20 @@ plot(H.fit, labels = df_country$country, main = "Cluster by score and foreigners
 rect.hclust(H.fit, k=4, border="red") 
 
 
+# Distances without Germany
+df_country_wger <- df_country[!(df_country$country == "Germany"), ]
+
+distances_wger <- dist(df_country_wger[,c("outcome", "foreign")], method = "euclidean")
+
+# Dendogram (without Germany)
+H.fit <- hclust(distances_wger, method="ward.D2")
+
+plot(H.fit, labels = df_country_wger$country, main = "Cluster by score and foreigners", cex = 0.8) # display dendogram
+
+# draw dendogram with red borders around the clusters
+rect.hclust(H.fit, k=4, border="red") 
+
+
 # Calculate the Pearson correlation coefficient for the entire dataframe
 correlation_coef <- cor(df_country$outcome, df_country$foreign, use="complete.obs")
 
@@ -234,7 +253,7 @@ plot(1:15, wss_filtered, type="b", xlab="Number of Clusters", ylab="Within group
 
 # Assuming the same k value is chosen
 set.seed(123)
-k <- 3 # or the new k value based on the elbow plot without Germany
+k <- 4 # or the new k value based on the elbow plot without Germany
 km_result_filtered <- kmeans(df_for_clustering_scaled_filtered, centers=k, nstart=25)
 
 # Add cluster assignments to the filtered dataframe
@@ -245,11 +264,78 @@ table(df_country_filtered$cluster)
 
 # Plotting the clusters without Germany
 ggplot(df_country_filtered, aes(x=foreign, y=outcome, label=country)) +
-  geom_point(aes(color=as.factor(cluster)), alpha=0.7, size=3) +
+  geom_point(aes(color=as.factor(cluster)), alpha=0.7, size=4) +
   geom_text(check_overlap = TRUE, vjust = -0.5) +
   scale_color_manual(values=rainbow(length(unique(df_country_filtered$cluster)))) +
-  labs(title="K-means Clustering of Countries by Outcome and Number of Foreigners (without Germany)",
+  labs(title="K-means Clustering (without Germany)",
        x="Number of Foreigners", y="Outcome (Score)",
        color="Cluster") +
   theme_minimal() +
   theme(legend.position="right")
+
+
+#PCA
+# Assuming df_country is your original dataframe with a 'country' column
+
+# Remove Germany from the dataframe
+df_country_without_germany <- df_country[df_country$country != 'Germany',]
+
+# Assuming that 'outcome' and 'foreign' are the columns you used for PCA
+pca_data <- df_country_without_germany[, c('outcome', 'foreign')]
+
+# Standardize the data
+pca_data_scaled <- scale(pca_data)
+
+
+# Perform PCA
+pca_results <- prcomp(pca_data_scaled)
+
+
+# Determine optimal number of clusters using elbow method
+wss <- numeric(10)  # within-cluster sum of squares
+for (i in 1:10) {
+  kmeans_result <- kmeans(pca_results$x[, 1:2], centers = i, nstart = 25)
+  wss[i] <- kmeans_result$tot.withinss
+}
+
+# Plot the elbow curve
+plot(1:10, wss, type = "b", xlab = "Number of Clusters", ylab = "Within-cluster sum of squares", main = "Elbow Method")
+
+# Based on the elbow method, determine the optimal number of clusters
+# In this case, visually inspect the plot and choose the number of clusters where the curve starts to bend (elbow point)
+
+# Perform K-means clustering on the PCA scores
+set.seed(123) # for reproducibility
+k <- 3 # chosen number of clusters
+clusters <- kmeans(pca_results$x[, 1:2], centers=k, nstart=25)
+
+# Get the PCA loadings
+loadings <- pca_results$rotation
+
+# Create an empty plot with the same dimensions as the PCA plot
+plot(pca_results$x[,1], pca_results$x[,2], type='n', xlab='PC1', ylab='PC2', main='PCA with k-means centroids')
+
+# Make the country text smaller using cex parameter
+text(pca_results$x[,1], pca_results$x[,2], labels=df_country_without_germany$country, cex=0.5, pos=4)
+
+# Overlay the cluster centroids
+points(clusters$centers[,1], clusters$centers[,2], col=1:k, pch=8, cex=2)
+
+# Add arrows for each feature (variable)
+arrows(0, 0, loadings['outcome',1], loadings['outcome',2], col='red', length=0.1)
+arrows(0, 0, loadings['foreign',1], loadings['foreign',2], col='blue', length=0.1)
+
+# Add labels to the arrows
+text(loadings['outcome',1], loadings['outcome',2], labels='Outcome', cex=0.7, pos=2, col='red')
+text(loadings['foreign',1], loadings['foreign',2], labels='Foreign', cex=0.7, pos=2, col='blue')
+
+# Determine optimal number of clusters using elbow method
+wss <- numeric(10)  # within-cluster sum of squares
+for (i in 1:10) {
+  kmeans_result <- kmeans(pca_results$x[, 1:2], centers = i, nstart = 25)
+  wss[i] <- kmeans_result$tot.withinss
+}
+
+# Plot the elbow curve
+plot(1:10, wss, type = "b", xlab = "Number of Clusters", ylab = "Within-cluster sum of squares", main = "Elbow Method")
+  
