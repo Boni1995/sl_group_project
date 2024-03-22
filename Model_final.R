@@ -1,6 +1,6 @@
 
-matches_foreign = read.csv('matches_foreign.csv')
-
+matches_foreign = read.csv('matches_foreign_final.csv')
+matches_foreign = matches_foreign[,-1]
 library(caret)
 library(rpart)
 library(rpart.plot)
@@ -16,15 +16,30 @@ partition = createDataPartition(matches_foreign$outcome, p = 0.8, list = FALSE)
 X = matches_foreign[partition, ]  
 y = matches_foreign[-partition, ] 
 
-#Decision Tree
-tree = rpart(outcome ~ home_team + away_team + home_foreign + away_foreign, data = X)
+#Decision Tree without Foreign
+tree = rpart(outcome ~ home_rank + away_rank + home_points + away_points, data = X)
 
 prediction = predict(tree, y, type='class')
 
-#Evaluation
-ConfusionMatrix(prediction, y$outcome)
+confusionMatrix(prediction, y$outcome)
 printcp(tree)
 
-#RandomForest
-rf = randomForest(outcome ~ home_team + away_team + home_foreign + away_foreign, data = X, ntry=4, ntree=2001, importance=TRUE)
+#Decision Tree with Foreign
+tree = rpart(outcome ~ home_rank + away_rank + home_points + away_points + home_foreign + away_foreign, data = X)
 
+prediction = predict(tree, y, type='class')
+
+confusionMatrix(prediction, y$outcome)
+printcp(tree)
+
+#RandomForest with Foreign
+rf = randomForest(outcome ~ home_rank + away_rank + home_points + away_points + home_foreign + away_foreign, data = X, ntry=4, ntree=2001, importance=TRUE)
+predictions <- predict(rf, newdata = y)
+
+confusionMatrix(predictions, y$outcome)
+
+#RandomForest without Foreign
+rf = randomForest(outcome ~ home_rank + away_rank + home_points + away_points, data = X, ntry=4, ntree=2001, importance=TRUE)
+predictions <- predict(rf, newdata = y)
+
+confusionMatrix(predictions, y$outcome)
